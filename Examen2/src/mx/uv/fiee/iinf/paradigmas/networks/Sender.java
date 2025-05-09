@@ -32,7 +32,7 @@ public class Sender {
         ByteArrayOutputStream baos = new ByteArrayOutputStream ();
         ObjectOutputStream oos = new ObjectOutputStream (baos);
 
-        for(int i=0; i<10; i++) {
+        while (true) {
 
             Persona p = new Persona ();
             p.setFullname("Random Name " + random.nextInt (1000)); // Random fullname
@@ -43,7 +43,7 @@ public class Sender {
             oos.flush ();
 
             byte[] bytes = baos.toByteArray ();
-            System.out.println ("Sending object #" + (i+1) + " with uuid: " + p.getUuid ());
+            System.out.println ("Sending object with uuid: " + p.getUuid ());
             utils.Send (bytes);
 
             baos.reset ();
