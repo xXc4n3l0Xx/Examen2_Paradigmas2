@@ -5,6 +5,12 @@ import java.net.Socket;
 import mx.uv.fiee.iinf.paradigmas.networks.models.Persona;
 import java.io.ObjectInputStream;
 
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.EOFException;
+
 /**
  * Clase principal que recibe objetos serializados desde un socket.
  */
@@ -25,43 +31,46 @@ public class Receiver {
      */
     private static class SocketUtils {
 
-        private Socket socket;
+        private SSLSocket socket;
 
         /**
          * Constructor que inicializa un socket cliente para conectarse a un servidor.
          * @param address Dirección del servidor.
          * @param port Puerto del servidor.
          */
-        public SocketUtils (String address, int port) {
+        public SocketUtils(String address, int port) {
+            System.setProperty("javax.net.ssl.trustStore", "keystore.jks");
+            System.setProperty("javax.net.ssl.trustStorePassword", "contraPOO2");
+
             try {
-                socket = new Socket (address, port);
+                SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                socket = (SSLSocket) factory.createSocket(address, port);
+                System.out.println("Conexión segura establecida con el servidor.");
             } catch (IOException e) {
-                e.printStackTrace ();
-                throw new RuntimeException("Error creating socket");
+                throw new RuntimeException("No se pudo conectar al servidor TLS", e);
             }
         }
 
         /**
          * Método para recibir objetos serializados desde el socket.
          */
+
         public void Receive() {
-            try (ObjectInputStream ois = new ObjectInputStream (socket.getInputStream ())) {
+            try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
                 while (true) {
                     try {
-                        Persona p = (Persona) ois.readObject (); // Deserialize Persona object
-                        System.out.println ("Received UUID: " + p.getUuid ()); // Print UUID
-                    } catch (ClassNotFoundException e) {
-                        System.err.println ("Class not found: " + e.getMessage ());
+                        Persona p = (Persona) ois.readObject();
+                        System.out.println("Received UUID: " + p.getUuid());
+                    } catch (ClassNotFoundException | EOFException e) {
+                        System.out.println("Fin del flujo o clase no encontrada.");
                         break;
-                    } catch (java.io.EOFException e) {
-                        System.err.println ("End of stream reached.");
-                        break; // Exit the loop when the stream ends
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace ();
+                e.printStackTrace();
             }
         }
-    }
 
+
+        }
 }

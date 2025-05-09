@@ -10,6 +10,11 @@ import java.net.Socket;
 import java.util.UUID;
 import java.util.Random;
 
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 /**
  * Clase principal que envía objetos serializados a través de la red.
  */
@@ -27,7 +32,7 @@ public class Sender {
         ByteArrayOutputStream baos = new ByteArrayOutputStream ();
         ObjectOutputStream oos = new ObjectOutputStream (baos);
 
-        while (true) {
+        for(int i=0; i<10; i++) {
 
             Persona p = new Persona ();
             p.setFullname("Random Name " + random.nextInt (1000)); // Random fullname
@@ -38,7 +43,7 @@ public class Sender {
             oos.flush ();
 
             byte[] bytes = baos.toByteArray ();
-            System.out.println ("Sending object with uuid: " + p.getUuid ());
+            System.out.println ("Sending object #" + (i+1) + " with uuid: " + p.getUuid ());
             utils.Send (bytes);
 
             baos.reset ();
@@ -51,17 +56,24 @@ public class Sender {
      * Clase interna para manejar la conexión del socket y el envío de datos.
      */
     private static class SocketUtils {
-        private final Socket socket;
+        private final SSLSocket socket;
 
         /**
          * Constructor que inicializa un ServerSocket y espera una conexión entrante.
          * @throws IOException Si ocurre un error al crear el socket.
          */
         SocketUtils() throws IOException {
-            try (ServerSocket serverSocket = new ServerSocket(19000)) {
-                System.out.println("Waiting for a connection...");
-                socket = serverSocket.accept ();
-            }
+            System.setProperty("javax.net.ssl.keyStore", "keystore.jks");
+            System.setProperty("javax.net.ssl.keyStorePassword", "contraPOO2");
+
+            SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(PORT);
+
+            System.out.println("Esperando conexión segura (TLS)...");
+            socket = (SSLSocket) serverSocket.accept();
+            System.out.println("Conexión segura establecida.");
+
+            serverSocket.close();
         }
 
         /**
@@ -69,18 +81,18 @@ public class Sender {
          * @param data Los datos en formato de arreglo de bytes.
          * @throws IOException Si ocurre un error al enviar los datos.
          */
-        void Send (byte [] data) throws IOException {
+        void Send(byte[] data) throws IOException {
             try {
-                System.out.println ("Data length: " + data.length);
-                socket.getOutputStream ().write (data, 0, data.length);
-                socket.getOutputStream ().flush ();
-                Thread.sleep (1000);
+                System.out.println("Data length: " + data.length);
+                socket.getOutputStream().write(data, 0, data.length);
+                socket.getOutputStream().flush();
+                Thread.sleep(1000);
             } catch (IOException e) {
-                e.printStackTrace ();
-                throw new RuntimeException ("Error sending data");
-            }
-            catch (InterruptedException ie) {
-                throw new RuntimeException ("Error sending data");
+                e.printStackTrace();
+                throw new RuntimeException("Error sending data (IOException)");
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+                throw new RuntimeException("Error sending data (InterruptedException)");
             }
         }
     }

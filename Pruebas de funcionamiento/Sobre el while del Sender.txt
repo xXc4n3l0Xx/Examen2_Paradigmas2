@@ -1,0 +1,1 @@
+Vimos que no tiene una condición de parada, por lo que se ejecuta de manera infinita. Eso ocasiona que el Receiver tampoco pueda parar. Lo dejamos como estaba, pero pensamos en que una opción podría ser cambiarlo por un ciclo for para que se detenga después de enviar n personas
